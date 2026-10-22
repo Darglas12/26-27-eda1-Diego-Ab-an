@@ -1,13 +1,12 @@
 # Reto 004 - Refactoring de la propuesta
 
-Parto de mi propuesta de [Elecciones](https://github.com/mmasias/26-27-eda1/pull/110) (array para los votos, cola para los votantes y la lista descartada) y del enunciado de [pyElecciones](https://github.com/puntoReflex/pyElecciones).
+Parto de mi propuesta de Elecciones (PR #110), donde usaba un array para los votos, una cola para los votantes y descartaba la lista, y del enunciado de pyElecciones.
 
-## Supuestos
-
-- Un alumno que se marcha deja de estar presente: no puede proponerse ni votar, pero si ya había votado su papeleta sigue en el montón.
-- Al cerrar el plazo, los candidatos quedan fijados aunque alguno se marche después.
-- La papeleta es secreta: lleva solo el nombre votado, no el de quien la entrega.
-- Una papeleta sin nombre se guarda como texto vacío.
+Supuestos que tomo:
+- Si un alumno se marcha ya no puede proponerse ni votar, pero si ya había votado su papeleta se queda en el montón.
+- Cuando se cierra el plazo los candidatos quedan fijados aunque alguno se vaya después.
+- La papeleta es secreta, solo lleva el nombre votado y no el de quien la entrega.
+- Una papeleta sin nombre la guardo como texto vacío.
 
 ## Propuesta revisada
 
@@ -22,52 +21,40 @@ Parto de mi propuesta de [Elecciones](https://github.com/mmasias/26-27-eda1/pull
 
 ## Cambios respecto a mi propuesta
 
-- **Mantengo el array para contar los votos**, pero lo amplío. Mi motivo sigue valiendo: los candidatos ya no cambian y llegar a una casilla por su posición es inmediato. Mi propuesta decía que "los candidatos se conocen antes de votar y no cambian", y eso solo es cierto **después de cerrar el plazo**. Ahora la pizarra tiene dos arrays paralelos (nombres y palitos) con dos opciones más, en blanco y nulo, porque el enunciado las pide. El array de nombres lo tomo de los ejemplos: sin él, la pizarra no sabría qué columna corresponde al nombre que canta el secretario.
-- **Cambio la cola de votantes por una lista de quién ha votado.** Yo decía "los alumnos votan por orden de llegada", pero el enunciado no habla de ninguna fila ni de que el orden importe. Lo que sí pide es que cada uno vote una vez, y para eso hay que preguntar "¿ya votó este?", cosa que una cola no permite sin vaciarla.
-- **Ya no descarto la lista: la uso para presentes y candidaturas.** Yo decía que en una lista "se mete o se saca gente por el medio, y aquí eso no pasa", y en el enunciado sí pasa: llegan alumnos tarde, otros se marchan y los candidatos se retiran. Esta decisión es la de los ejemplos; me convenció que el tamaño de esos datos cambia durante el proceso.
-- **Añado la pila para las papeletas**, que en mi propuesta ni aparecían. De las dos soluciones de los ejemplos me quedo con la B: el enunciado describe un montón y el secretario coge siempre la de encima.
+- El array para contar los votos lo mantengo, porque los candidatos ya no cambian y llegar a una casilla por su posición es inmediato. Pero en mi propuesta decía que "los candidatos se conocen antes de votar y no cambian" y eso solo es verdad después de cerrar el plazo. Ahora la pizarra tiene dos arrays paralelos (nombres y palitos) y dos opciones más, en blanco y nulo, que pide el enunciado. El array de nombres lo saco de los ejemplos, sin él la pizarra no sabe qué columna es el nombre que canta el secretario.
+- La cola de votantes la cambio por una lista de quién ha votado. Yo decía que "los alumnos votan por orden de llegada" pero el enunciado no habla de ninguna fila ni de que el orden importe. Lo que sí dice es que cada uno vota una vez, y para eso hay que preguntar "¿este ya votó?", y eso con una cola no se puede sin vaciarla.
+- La lista ya no la descarto, la uso para presentes y candidaturas. Yo decía que una lista sirve cuando "se mete o se saca gente por el medio, y aquí eso no pasa", pero en el enunciado sí pasa: llegan alumnos tarde, otros se van y los candidatos se retiran. Esto lo cojo de los ejemplos, me convenció que el tamaño de esos datos cambia durante el proceso.
+- Añado una pila para las papeletas, que en mi propuesta ni salían. De las dos soluciones de los ejemplos me quedo con la B porque el enunciado habla de un montón y el secretario coge siempre la de encima.
 
 ## Simulación
 
-`src/elecciones/`: cada estructura del código es una fila de la tabla.
+El código está en src/elecciones. Cada estructura del código es una fila de la tabla:
+- Nodo: el nodo de la lista y de la pila
+- Lista: presentes, candidaturas y quién ha votado (inserta y elimina con nodo dummy)
+- Pila: el montón de papeletas
+- Pizarra: los dos arrays (opciones y palitos), anota, borra y proclama mirando si hay empate
+- Eleccion: el proceso con sus fases (candidaturas, secretario, votación, escrutinio, proclamación), decide qué se acepta y qué se rechaza
+- Ejemplo: ejecuta la simulación
 
-|Fichero|Qué es|
-|-|-|
-|[Nodo.java](src/elecciones/Nodo.java)|Nodo de la lista y de la pila|
-|[Lista.java](src/elecciones/Lista.java)|Presentes, candidaturas y quién ha votado (insertar y eliminar con nodo dummy)|
-|[Pila.java](src/elecciones/Pila.java)|Montón de papeletas|
-|[Pizarra.java](src/elecciones/Pizarra.java)|Arrays paralelos de opciones y palitos; anota, borra y proclama detectando el empate|
-|[Eleccion.java](src/elecciones/Eleccion.java)|El proceso y sus fases (candidaturas → secretario → votación → escrutinio → proclamación): decide qué se acepta y qué se rechaza|
-|[Ejemplo.java](src/elecciones/Ejemplo.java)|Ejecuta la simulación evento a evento|
+Lo que pasa en la simulación:
+- Carlos llega tarde y Luisito se marcha
+- Marta retira su candidatura y la de Luisito se rechaza porque ya no está
+- Marta vota en blanco y Carlos vota a "Batman" (nulo)
+- Luisito intenta votar después de irse
+- Pepito intenta votar otra vez
+- Se canta "Pepito", el presidente anota a Anita por error y borra el palito
+- Al final Anita 2 y Pepito 2, empate y hay que repetir
 
-Eventos que muestra:
-
-|Evento|En la simulación|
-|-|-|
-|Un alumno llega tarde y otro se marcha|Llega Carlos; se marcha Luisito|
-|Candidatura retirada y candidatura rechazada|Marta se retira; Luisito se propone sin estar presente|
-|Papeleta en blanco y papeleta nula|Marta vota en blanco; Carlos vota a "Batman"|
-|Voto de alguien que no está|Luisito intenta votar después de marcharse|
-|Votar dos veces|Pepito intenta votar otra vez|
-|Corrección de una anotación|Se canta "Pepito", el presidente anota a Anita y borra el palito|
-|Proclamación con empate|Anita 2 - Pepito 2: hay que repetir la votación|
-
+Para ejecutarlo, desde src:
 ```
-cd src
 javac -encoding UTF-8 -d out elecciones/*.java
 java -ea -cp out elecciones.Ejemplo
 ```
 
 ## Retos extendidos
 
-### Abstención
+Abstención: al final informarAbstencion recorre presentes y cuenta los que no están en yaHanVotado. En la simulación sale 1 de 7 (Lucas). Cuesta presentes x votantes comparaciones porque por cada presente se recorre la otra lista. No se puede sacar leyendo papeletas porque el que no vota no deja papeleta y además las papeletas no llevan el nombre de quien la entrega. Una en blanco es un voto, no una abstención. Y para leerlas habría que vaciar la pila.
 
-Al cierre, `informarAbstencion` recorre `presentes` y cuenta los que no están en `yaHanVotado`: en la simulación, 1 de 7 (Lucas). Cuesta presentes × votantes comparaciones, porque por cada presente se recorre la otra lista.
+Lo que rebato de los ejemplos: en las soluciones A y B, votar solo mira que el alumno esté en presentes, así que no cumple "cada alumno vota una vez" del enunciado. Si Pepito entrega dos papeletas se cuentan las dos, y en la tabla no lo ponen como limitación. Les falta guardar quién ha votado ya (yo uso la lista yaHanVotado), separado de la papeleta para que el voto siga siendo secreto.
 
-No puede contarse leyendo papeletas por dos motivos: quien no vota no deja papeleta (no hay nada que leer) y las papeletas no llevan el nombre de quien las entrega. Una papeleta en blanco es un voto, no una abstención. Además, para leerlas habría que vaciar la pila.
-
-### Lo que rebato de los ejemplos
-
-En las soluciones A y B, `votar` solo comprueba que el alumno esté en `presentes`. **No atiende un hecho del enunciado: "cada alumno vota una vez".** Si Pepito entrega dos papeletas, las dos entran en el montón y se cuentan, y la tabla no lo declara como limitación. Les falta un dato, quién ha votado ya, con su estructura (aquí, la lista `yaHanVotado`), y separado de la papeleta para que el voto siga siendo secreto.
-
-También rebato un argumento de la solución A: dice que la cola "facilita reconstruir el proceso si hay que revisarlo". Como la papeleta no lleva el nombre de quien vota, leerlas en orden de recogida no permite reconstruir nada que no dé también la pila.
+También la solución A dice que la cola "facilita reconstruir el proceso si hay que revisarlo", pero como la papeleta no lleva el nombre de quien vota, leerlas en el orden de recogida no te deja reconstruir nada que no te dé también la pila.
